@@ -1,0 +1,331 @@
+import numpy as np
+import networkx
+import random
+            
+            
+# G = (V,E) mit V = {1,...,n}           
+class Graph:
+    
+    # Initialisierung eines Graph
+    def __init__(self, n):
+        self.n = n								# Anzahl der Knoten
+        self.A = np.zeros((n, n), dtype = int)	# Initialisierung der Adjazenzmatrix
+        self.C = np.full((n, n), np.inf)		# Initialisierung der Kostenmatrix
+        np.fill_diagonal(self.C, 0)				# Jeder Knoten ist von sich selbst aus ohne Kosten zu erreichen.
+
+    # Kanten hinzufügen
+    def add_edge(self, u, v):
+        self.A[u-1][v-1] += 1
+        self.A[v-1][u-1] += 1 					# Symmetrie der Adjazenzmatrix im ungerichteten Graphen
+    
+    # Kante löschen
+    def delete_edge(self, u, v):
+        self.A[u-1][v-1] -= 1
+        self.A[v-1][u-1] -= 1 					# Symmetrie der Adjazenzmatrix im ungerichteten Graphen
+        
+    # Kantengewicht hinzufügen
+    def add_weight(self, u, v, weight):
+        self.C[u-1][v-1] = weight
+        self.C[v-1][u-1] = weight 				# Symmetrie der Kostenmatrix im ungerichteten Graphen
+    
+    # Adjazenzmatrix ausgeben
+    def display_A(self):
+        for i in range(self.n):
+            print(self.A[i])
+    
+    # Kostenmatrix ausgeben
+    def display_C(self):
+        for i in range(self.n):
+            print(self.C[i])
+    
+    
+    ###########################################
+    # HEURISTIKEN & APPROXIMATIONSALGORITHMEN #
+    ###########################################
+
+    
+    # Nearesr Neighbor (NN)
+    def nearest_neighbor(self, start = 1):
+        V_m = [k+1 for k in range(self.n)]								# V_m = {1,...,n} (enthält alle Knoten, die noch nicht hinzugefügt wurden)
+        tour = []														# Initialisiere die Rundtour                           
+        tour.append(start)												# Startknoten (standardmäßig wird im 1. Knoten gestartet)
+        V_m.remove(start)
+        cost = 0														# Initialisiere Kosten
+        while len(V_m) > 0:												# Solange wir noch nicht alle Knoten besucht haben:
+            i = V_m[0]
+            for j in V_m:												# Finde nächsten Knoten mit minimalem Abstand zum letzten ...
+                if self.C[j-1][tour[-1]-1] < self.C[i-1][tour[-1]-1]:
+                    i = j
+            cost += self.C[i-1][tour[-1]-1]
+            tour.append(i)												# ... und füge ihn hinzu.
+            V_m.remove(i)
+        cost += self.C[tour[-1]-1][tour[0]-1]							# Rundtour schließen
+        tour.append(tour[0])
+        return tour, cost
+    
+    
+    # Double Nearest Neighbor (2NN)
+    def double_nearest_neighbor(self, start = 1):
+        V_m = [k+1 for k in range(self.n)]								# V_m = {1,...,n} (enthält alle Knoten, die noch nicht hinzugefügt wurden)
+        tour = []														# Initialisiere die Rundtour                           
+        tour.append(start)												# Startknoten (standardmäßig wird im 1. Knoten gestartet)
+        V_m.remove(start)
+        cost = 0														# Initialisiere Kosten
+        while len(V_m) > 0:												# Solange wir noch nicht alle Knoten besucht haben:
+            j_0 = V_m[0]
+            for j in V_m:												# Finde nächsten Knoten j_0 mit minimalem Abstand zum ersten.
+                if self.C[j-1][tour[0]-1] < self.C[j_0-1][tour[0]-1]:
+                    j_0 = j
+            j_1 = V_m[0]
+            for j in V_m:												# Finde nächsten Knoten j_1 mit minimalem Abstand zum letzten.
+                if self.C[j-1][tour[-1]-1] < self.C[j_1-1][tour[-1]-1]:
+                    j_1 = j
+            if self.C[j_0-1][tour[0]-1] < self.C[j_1-1][tour[-1]-1]:	# Füge denjenigen Knoten hinzu, der zur geringeren Kostenerhöhung führt.
+                cost += self.C[j_0-1][tour[0]-1]
+                tour.insert(0, j_0)
+                V_m.remove(j_0)
+            else:
+                cost += self.C[j_1-1][tour[-1]-1]
+                tour.append(j_1)
+                V_m.remove(j_1)
+        cost += self.C[tour[-1]-1][tour[0]-1]							# Rundtour schließen
+        tour.append(tour[0])
+        return tour, cost
+    
+    
+    # Cheapest Insertion (CI)
+    def cheapest_insertion(self, start1 = 1, start2 = 2, start3 = 3):
+        circle = [start1, start2, start3, start1] 						# Startkreis der Länge 3
+        V_m = [k+1 for k in range(self.n)]								# V_m enthält alle Knoten, die noch nicht hinzugefügt wurden
+        V_m.remove(start1)
+        V_m.remove(start2)
+        V_m.remove(start3)
+        while len(V_m) > 0:												# Solange wir noch nicht alle Knoten besucht haben:
+            d_j_m = np.inf												# Initialisiere minimale Kostenerhöhung für j_m (d(j_m))
+            for j in V_m:												# Betrachte alle Knoten, die noch nicht eingefügt wurden.
+                d_j = np.inf											# Initialisiere minimale Kostenerhöhung für j (d(j))
+                for k in range(1, len(circle)):							# Betrachte alle möglichen Positionen...
+                    d_j_k = self.C[circle[k-1]-1][j-1] + self.C[j-1][circle[k]-1] - self.C[circle[k-1]-1][circle[k]-1] # c(i_k,j) + c(j,i_{k+1}) - c(i_k,i_{k+1}
+                    if d_j_k < d_j:										# ... und suche das Minimum.
+                        d_j = d_j_k
+                        k_min = k										# k_min = Position, an der das Minimum für j angenommen wird
+                if d_j < d_j_m:											# Finde das Minimum über alle j.
+                    j_m = j												# j_m ist der Knoten, der eingefügt werden soll
+                    d_j_m = d_j
+                    k_j_m = k_min										# k_j_m = Position, an der das Minimum für j_m angenommen wird
+            circle.insert(k_j_m, j_m)									# Füge den Knoten, der zur minimalen Kostenerhöhung führt, hinzu.
+            V_m.remove(j_m)
+        cost = 0														# Berechne die Kosten der Rundtour.
+        for i in range(len(circle)-1):
+            cost += self.C[circle[i]-1][circle[i+1]-1]    
+        return circle, cost
+    
+    
+    # Tiefensuche
+    def dfs(self, u, visited, parent):
+        visited.append(u)								# Mit dem Aufruf der Tiefensuche für den Knoten u wird dieser besucht.
+        for i in range(self.n):							# Iteriere über alle Knoten
+            if self.A[u][i] != 0:						# und, wenn der Knoten ein Nachbar von u ist...
+                if i not in visited:					# ... und noch nicht besucht wurde,
+                    if self.dfs(i, visited, u):			# rufe die Tiefensuche (rekursiv) für diesen Knoten auf (mit v als parent).
+                        return True						# und gebe das Ergebnis zurück.
+                else:									# ... und bereits besucht wurde,
+                    if parent != i:						# aber nicht parent des aktuell betrachteten Knoten u ist,
+                        return True						# wurde ein Kreis gefunden und es wird True zurückgegeben.
+        return False
+        
+        
+    # Test auf Kreisfreiheit
+    def is_cyclic(self):
+        visited = []							# Anfangs sind noch keine Knoten besucht.
+        for i in range(self.n):					# Iteriere über alle Knoten...
+            if i not in visited:				# und führe, falls dieser noch nicht besucht wurden, die Tiefensuche durch.
+                if self.dfs(i, visited, None):	# Wenn die Tiefensuche einen Kreis findet,
+                    return True					# wird True zurückgegeben.
+        return False							# Falls kein Kreis gefunden wurde, False.
+    
+    
+    # Bestimmung MST
+    def kruskal(self):
+        weighted_edges = []												# Speichere alle Kanten mit endlichem Gewicht in einer Liste.
+        for i in range(self.n):
+            for j in range(i+1, self.n):
+                if self.C[i][j] != np.inf:
+                    weighted_edges.append([self.C[i][j], i+1, j+1])		# Kanten werden als Tripel (c(i,j), i, j) gespeichert
+        #sorted_edges = quicksort(weighted_edges)
+        sorted_edges = sorted(weighted_edges)							# Sortiere Kanten nach Gewicht.
+        MST = Graph(self.n)												# Lege MST mit n Ecken (ohne Kanten) an.
+        for i in range(len(sorted_edges)):								# Iteriere über alle Kanten (in sortierter Reihenfolge)
+            MST.add_edge(sorted_edges[i][1], sorted_edges[i][2])		# und prüfe, ob der Graph nach Hinzufügen der nächsten Kante
+            if MST.is_cyclic():											# immer noch kreisfrei ist.
+                MST.delete_edge(sorted_edges[i][1], sorted_edges[i][2])	# Falls sich ein Kreis ergibt, verwerfen wir die Kante.
+            else:														# Falls sich kein Kreis ergibt, behalten wir die Kante und nehmen noch ihr Gewicht mit auf.
+                MST.add_weight(sorted_edges[i][1], sorted_edges[i][2], sorted_edges[i][0])
+        return MST
+    
+    
+    # Minimum Spanning Tree (MST)
+    def minimum_spanning_tree(self):
+        
+        # Konstruiere MST (mithilfe von Kruskal)
+        MST = self.kruskal()
+        
+        # Erzeuge Eulerschen Graphen durch Verdoppeln aller Kanten
+        for u in range(1, self.n + 1):
+            for v in range(u, self.n + 1):
+                if MST.A[u-1][v-1] > 0:
+                    MST.add_edge(u, v)
+                    
+        # Konstruiere Euler-Zug
+        G = networkx.MultiGraph()										# Erzeuge einen Multigraphen der Bibliothek NetworkX (um eulerian_circuit() anwenden zu können),
+        for i in range(self.n):											# der dem MST mit verdoppelten Kanten entspricht.
+            for j in range(i+1, self.n):
+                for k in range(MST.A[i][j]):
+                    G.add_edge(i+1, j+1, weight = MST.C[i][j])
+        euler = list(networkx.eulerian_circuit(G))						# Finde Euler-Zug
+        cycle = []														# Wandle euler (Liste von Kanten) in eine Liste von Ecken um.
+        for i in range(len(euler)):
+            cycle.append(euler[i][0])
+        cycle.append(cycle[0])											# Rundtour schließen
+        
+        # Konstruiere Hamiltonkreis
+        hamilton = [] 													# Initialisiere Hamiltonkreis
+        for i in cycle:
+            if i not in hamilton:										# Bereits durchlaufene Ecken werden übersprungen und
+                hamilton.append(i)										# neue Ecken werden hinzugefügt.
+        hamilton.append(hamilton[0])									# Schließe den Hamilton-Weg zum Hamilton-Kreis.
+        
+        # Berechne die Kosten der Rundtour.
+        cost = 0
+        for i in range(len(hamilton)-1):
+            cost += self.C[hamilton[i]-1][hamilton[i+1]-1]
+            
+        return hamilton, cost
+    
+    
+    # Christofides (CH)
+    def christofides(self):
+        
+        # Konstruiere MST (mithilfe von Kruskal)
+        MST = self.kruskal()
+        
+        # Betrachte die Menge U der Ecken ungeraden Grades
+        U = []
+        for i in range(self.n):
+            if sum(MST.A[i]) %2 != 0:
+                U.append(i+1)
+                
+        # Minimales perfektes Matching auf U mithilfe von NetworkX
+        U_Graph = networkx.Graph()										# Erzeuge einen Multigraphen der Bibliothek NetworkX (um min_weight_matching() anwenden zu können),
+        for i in range(len(U)):											# der dem vollständigen Teilgraphen auf U entspricht.
+            for j in range(i+1, len(U)):
+                U_Graph.add_edge(U[i], U[j], weight = self.C[U[i]-1][U[j]-1])
+        matching = networkx.min_weight_matching(U_Graph)				# Finde minimales perfektes Matching
+        
+        # Kanten zu MST hinzufügen, um Eulerschen Graphen zu erhalten
+        for edge in matching:
+            MST.add_edge(edge[0], edge[1])
+            
+        # analog zu MST-Heuristik:
+        
+        # Konstruiere Euler-Zug
+        G = networkx.MultiGraph()										# Erzeuge einen Multigraphen der Bibliothek NetworkX (um eulerian_circuit() anwenden zu können),
+        for i in range(self.n):											# der dem MST mit hinzugefügten Kanten entspricht.
+            for j in range(i+1, self.n):
+                for k in range(MST.A[i][j]):
+                    G.add_edge(i+1, j+1, weight = MST.C[i][j])
+        euler = list(networkx.eulerian_circuit(G))						# Finde Euler-Zug
+        cycle = []														# Wandle euler (Liste von Kanten) in eine Liste von Ecken um.
+        for i in range(len(euler)):
+            cycle.append(euler[i][0])
+        cycle.append(cycle[0])											# Rundtour schließen
+        
+        # Konstruiere Hamiltonkreis
+        hamilton = [] 													# Initialisiere Hamiltonkreis
+        for i in cycle:
+            if i not in hamilton:										# Bereits durchlaufene Ecken werden übersprungen und
+                hamilton.append(i)										# neue Ecken werden hinzugefügt.
+        hamilton.append(hamilton[0])									# Schließe den Hamilton-Weg zum Hamilton-Kreis.
+        
+        # Berechne die Kosten der Rundtour.
+        cost = 0
+        for i in range(len(hamilton)-1):
+            cost += self.C[hamilton[i]-1][hamilton[i+1]-1]
+            
+        return hamilton, cost
+   
+   
+    # Ant System (AS)
+    def ant_system(self, ants = 10, iterations = 50, alpha = 1, beta = 3, rho = 0.5): # Parameter setzen
+        
+        # Pheromonspuren initialisieren
+        pheromone = np.full((self.n, self.n), ants/(self.nearest_neighbor()[1]))
+        
+        # beste Tour initialisieren
+        best_tour = None
+        best_tour_length = np.inf
+        
+        # Iteration
+        for t in range(iterations):
+            tours = []
+            tour_lengths = []
+            
+            # Tour-Konstruktion durch jede Ameise
+            for k in range(ants):
+                
+                # visited-Liste als Tour-Memory
+                visited = []
+                
+                # Start in zufälliger Stadt
+                i = random.randint(1,self.n)
+                visited.append(i)
+                
+                L_k = 0 # Tour-Länge mit 0 initialisieren
+                
+                while len(visited) < self.n:
+                    
+                    # N_i Liste der unbesuchten Nachbarn der Ameise k am Punkt i
+                    N_i = []
+                    for j in range(1, self.n + 1):
+                        if j not in visited and self.A[i-1][j-1] != 0: # unbesuchte Nachbarn
+                            N_i.append(j)
+                    
+                    # Wahrscheinlichkeit berechnen, in die Stadt j zu gehen
+                    p_i = []
+                    for j in range(1, self.n + 1):
+                        if j not in visited:
+                            p_ij = (pheromone[i-1][j-1]**alpha * (1/self.C[i-1][j-1])**beta)
+                            p_i.append(p_ij)
+                    p_i = p_i / sum(p_i)
+                    
+                    # zufällige Wahl der nächsten Stadt
+                    j = np.random.choice(N_i, p = p_i)
+                    visited.append(j)
+                    L_k += self.C[i-1][j-1]
+                    i = j
+                    
+                # Tour schließen
+                L_k += self.C[visited[0]-1][visited[-1]-1]
+                visited.append(visited[0])
+                
+                # Tour hinzufügen
+                tours.append(visited)
+                tour_lengths.append(L_k)
+                
+                # Verbesserung prüfen
+                if L_k < best_tour_length:
+                    best_tour_length = L_k
+                    best_tour = visited
+            
+            # Pheromon-Update
+            
+            # Pheromon-Verdunstung
+            pheromone *= (1-rho)
+            
+            # Pheromon auf besuchten Kanten anpassen
+            for k in range(ants):
+                for i in range(self.n):
+                    pheromone[tours[k][i]-1][tours[k][i+1]-1] += 1/tour_lengths[k]
+                    pheromone[tours[k][i+1]-1][tours[k][i]-1] += 1/tour_lengths[k] # Symmetrie
+                    
+        return best_tour, best_tour_length
