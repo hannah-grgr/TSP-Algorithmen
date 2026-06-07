@@ -51,5 +51,5 @@ for n in size:
         tour = hk[1]
         tour.pop(0) # 1. Wert kommt doppelt vor
         tour_length = hk[0]
-        print("optimal:	", [tour, tour_length])
+        print("optimal:	", (tour, tour_length))
     print("")
