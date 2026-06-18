@@ -2,6 +2,7 @@ import algorithmen
 import held_karp
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def read_csv(n, file): # Liest eine CSV-Datei ein und gibt den entsprechenden Graphen mit n Ecken aus
@@ -28,8 +29,6 @@ def read_csv(n, file): # Liest eine CSV-Datei ein und gibt den entsprechenden Gr
 
 # DEUTSCHLANDS 50 GRÖßTE STÄDTE
 
-#file = 'deutschland_staedte_distanzen.csv'
-#size = [5, 10, 20, 50]
 file = 'deutschland_staedte_distanzmatrix_100.csv'
 size = [5, 10, 20, 50, 75, 100]
 
@@ -43,9 +42,12 @@ for n in size:
     print("CI:		", graph.cheapest_insertion())
     print("CI: Min:	", min({graph.cheapest_insertion(i)[1] for i in range(n)}))
     print("MST:		", graph.minimum_spanning_tree())
+    print("MST: Min:       ", graph.minimum_spanning_tree(both_directions = True)[1])
     print("CH:		", graph.christofides())
-    print("AS:		", graph.ant_system(iterations = 100))
+    print("CH: Min:        ", graph.christofides(both_directions = True)[1])
+    print("AS:		", graph.ant_system(ants = n, iterations = 100))
     
+    # Für n <= 20 können wir die optimale Lösung berechnen:
     if n <= 20:
         hk = held_karp.held_karp(graph.C) # Rückgabewert ist das Tupel (minimale Kosten, Tour)
         tour = hk[1]
@@ -53,3 +55,12 @@ for n in size:
         tour_length = hk[0]
         print("optimal:	", (tour, tour_length))
     print("")
+
+    # Für n = 100 wollen wir den Suchverlauf von AS als Plot ausgeben:
+    if n == 100:
+        # Plot
+        plt.plot(algorithmen.plot_tour_costs)
+        plt.xlabel('Iterationen')
+        plt.ylabel('Tourkosten')
+        plt.savefig('Ant_System_Iterations.pdf')
+        plt.show()
