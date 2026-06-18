@@ -254,7 +254,7 @@ class Graph:
         G = networkx.MultiGraph()										# Erzeuge einen Multigraphen der Bibliothek NetworkX (um eulerian_circuit() anwenden zu können),
         for i in range(self.n):											# der dem MST mit hinzugefügten Kanten entspricht.
             for j in range(i+1, self.n):
-                for k in range(MST.A[i][j]):
+                if MST.A[i][j] != 0:
                     G.add_edge(i, j, weight = MST.C[i][j])
         for edge in matching:
             G.add_edge(edge[0], edge[1], weight = self.C[edge[0]][edge[1]])
@@ -343,5 +343,5 @@ class Graph:
 
             # beste bisherige Tour wird nach jeder Iteration für einen Plot gespeichert
             plot_tour_costs.append(best_tour_cost)
-            
+
         return best_tour, best_tour_cost
