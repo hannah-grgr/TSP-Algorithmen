@@ -13,7 +13,7 @@ Hier wurden die Heuristiken
 zur Bestimmung einer Rundtour in einem vollständigen ungerichteten Graphen in Python implementiert.
 Die Algorithmen wurden am Beispiel der größten 100 deutschen Städte und ihrer Distanzen getestet.
 
-In der Datei algorithmen.py wird eine Klasse für Graphen implementiert, innerhalb derer alle Algorithmen umgesetzt werden. Das Beispiel lässt sich über die Datei beispiel.py ausführen. Die Beispieldaten sind in der Datei deutschland_staedte_distanzmatrix_100.csv enthalten. Verglichen werden die Ergebnisse mit der optimalen Lösung, die vom Held-Karp-Algorithmus bestimmt wird (held_karp.py). Das Programm produziert den Plot Ant_System_Iterations.pdf, der den Verlauf der Suche innerhalb der ersten 100 Iteration des Ant System Algorithmus veranschaulicht.
+In der Datei algorithmen.py wird eine Klasse für Graphen implementiert, innerhalb derer alle Algorithmen umgesetzt werden. Das Beispiel lässt sich über die Datei beispiel.py ausführen. Die Beispieldaten sind in der Datei deutschland_staedte_distanzmatrix_100.csv enthalten. Verglichen werden die Ergebnisse mit der optimalen Lösung, die vom Held-Karp-Algorithmus bestimmt wird (held_karp.py). Das Programm gibt für verschieden große Eingaben die berechneten Touren und deren Kosten für alle Algorithmen zurück und produziert den Plot Ant_System_Iterations.pdf, der den Verlauf der Suche innerhalb der ersten 100 Iteration des Ant System Algorithmus veranschaulicht.
 
 ## Programm ausführen:
 
