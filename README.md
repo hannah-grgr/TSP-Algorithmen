@@ -9,8 +9,9 @@ Hier wurden die Heuristiken
 - MST
 - Christofides
 - Ant System
-  zur Bestimmung einer Rundtour in einem vollständigen ungerichteten Graphen in Python implementiert.
-  Die Algorithmen wurden am Beispiel der größten 100 deutschen Städte und ihrer Distanzen getestet.
+
+zur Bestimmung einer Rundtour in einem vollständigen ungerichteten Graphen in Python implementiert.
+Die Algorithmen wurden am Beispiel der größten 100 deutschen Städte und ihrer Distanzen getestet.
 
 In der Datei algorithmen.py wird eine Klasse für Graphen implementiert, innerhalb derer alle Algorithmen umgesetzt werden. Das Beispiel lässt sich über die Datei beispiel.py ausführen. Die Beispieldaten sind in der Datei deutschland_staedte_distanzmatrix_100.csv enthalten. Verglichen werden die Ergebnisse mit der optimalen Lösung, die vom Held-Karp-Algorithmus bestimmt wird. Das Programm produziert den Plot Ant_System_Iterations.pdf, der den Verlauf der Suche innerhalb der ersten 100 Iteration des Ant System Algorithmus veranschaulicht.
 
