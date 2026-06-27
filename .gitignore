@@ -1,6 +1,6 @@
 __pycache__/
-*.pyc/
-.vscode/
-.DS-Store/
-.gitignore/
+*.pyc
+.vscode
+.DS-Store
+.gitignore
 *.pdf
